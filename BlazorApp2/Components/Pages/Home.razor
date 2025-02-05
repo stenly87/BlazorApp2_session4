@@ -25,11 +25,11 @@
 
     <div class="row my-3">
         <div class="overflow-auto">
-            <div class="row flex-nowrap">
+            <div class="row flex-nowrap" >
                 @foreach (var user in employees)
                 {
-                    <div class="col-sm-2">
-                        <div class="bg-success p-3 mb-3">
+                    <div class="col-sm-2  mb-3">
+                        <div class="bg-success p-3" >
                             <div class="row">
                                 <div class="col"><b>@user.LastName</b></div>
                                 <div class="col"><b>@user.FirstName</b></div>
@@ -93,6 +93,8 @@
     </div>
 </div>
 
+@* я пытался сунуть блок в середину и поверх всего остального *@
+@* @qrhide в конце задает видимость*@
 <div style="z-index: 1000;align-items: center;justify-content: center;display: flex;position:fixed;width:100%;height:100%;top:0;left:0; @qrhide">
     <div style="width:200px;" onclick="@(()=>CloseQR())">
         @((MarkupString)qrcode)
@@ -130,7 +132,12 @@
             employees = await db.Employees.AsNoTracking().Include(s => s.IdRoleNavigation).Where(s =>
                 s.LastName.ToLower().Contains(find) ||
                 s.FirstName.ToLower().Contains(find) ||
-                (s.Patronymic != null && s.Patronymic.ToLower().Contains(find))).ToListAsync();
+                s.IdRoleNavigation.Title.ToLower().Contains(find) ||
+                s.CorporateEmail.ToLower().Contains(find) ||
+                s.WorkPhone.ToLower().Contains(find) ||
+                s.BirthdayDate.ToString().ToLower().Contains(find) ||
+                (s.Patronymic != null && s.Patronymic.ToLower().Contains(find)) // по идее проверка на null нужна и для роли и для даты рождения
+            ).ToListAsync();
             // и вызвать что-то типа этих двух строк и будет +0.5 балла
             // var client = httpFactory.CreateClient("apiClient");
             // employees = await client.GetFromJsonAsync<List<Employee>>($"employers/{find}");
@@ -197,7 +204,11 @@
 
         // фильтрация по поиску
         if (!string.IsNullOrEmpty(find))
-            news = newsResult.Where(s => s.Title.ToLower().Contains(find) || s.Description.ToLower().Contains(find)).ToList();
+            news = newsResult.Where(s => 
+                s.Title.ToLower().Contains(find) ||
+                s.Description.ToLower().Contains(find) ||
+                s.Date.ToShortDateString().ToLower().Contains(find)
+            ).ToList();
         else
             news = newsResult.ToList();
 
@@ -215,7 +226,7 @@
         timer = new Timer(s =>
         {
             RssUpdateAsync();
-            InvokeAsync(StateHasChanged); // без этой строки нифига не обновится, потому что вызов из другого потока
+            InvokeAsync(StateHasChanged); // без этой строки нифига не обновится
         }, null, 15000, 15000);
     }
 
@@ -234,22 +245,22 @@
         manager.NavigateTo($"/download/{ev1.Id}", true);
     }
 
-    // используем эту строку вместе с преобразованием в MarkupString - qr-код будет сразу на странице
+    // используем эту строку вместе с преобразованием в MarkupString - qr-код будет сразу на странице в виде картинки
     string qrcode;
     // qrhide для скрытия блока с qr-кодом
     string qrhide = "display: none";
     void ShowQR(Employee user)
     {
         // максимально проклято
-        string text = "BEGIN:VCARD" +
-        "VERSION:3.0" +
-        $"N:{user.FirstName}" +
-        $"FN:{user.LastName}" +
-        $"ORG:ГК Дороги России" +
-        $"TITLE:{user.IdRoleNavigation.Title}" +
-        $"TEL;WORK;VOICE:{user.WorkPhone}" +
-        $"TEL;CELL:{user.PersonalPhone}" +
-        $"EMAIL;WORK;INTERNET:{user.CorporateEmail}" +
+        string text = "BEGIN:VCARD\n" +
+        "VERSION:3.0\n" +
+        $"N:{user.FirstName}\n" +
+        $"FN:{user.LastName}\n" +
+        $"ORG:ГК Дороги России\n" +
+        $"TITLE:{user.IdRoleNavigation.Title}\n" +
+        $"TEL;WORK;VOICE:{user.WorkPhone}\n" +
+        $"TEL;CELL:{user.PersonalPhone}\n" +
+        $"EMAIL;WORK;INTERNET:{user.CorporateEmail}\n" +
         "END:VCARD";
 
         // эти 2 строки есть readme-файле в нугете - его можно увидеть в папке с нугетом, легко открыть из обозревателя решений
@@ -258,7 +269,7 @@
         qrcode = svg;
         qrhide = ""; // открываем блок с кодом
 
-        InvokeAsync(StateHasChanged);
+        InvokeAsync(StateHasChanged); // без этой строки блок не появится
     }
 
     void CloseQR()

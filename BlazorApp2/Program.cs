@@ -33,8 +33,8 @@ app.Map("/download/{id}", async (int id, IHttpClientFactory httpClientFactory) =
 
     var httpClient = httpClientFactory.CreateClient("apiClient");
     // запрос в апи, нужны данные по одному событию
-    var eventObj = await httpClient.GetFromJsonAsync<Event>($"event/{id}");
-    string file = "формируем файл из eventObj";
+   // var eventObj = await httpClient.GetFromJsonAsync<Event>($"event/{id}");
+    string file = "формируем файл из eventObj по такому же принципу, как для сотрудника";
     // получаем байты из текста
     var bytes = System.Text.Encoding.UTF8.GetBytes(file); 
     // возвращаем результаты в виде текстового файла
