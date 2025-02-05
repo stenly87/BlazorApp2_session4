@@ -1,0 +1,268 @@
+﻿@page "/"
+@using BlazorApp2.DB
+@using Microsoft.EntityFrameworkCore
+@using Net.Codecrete.QrCodeGenerator
+@inject NavigationManager manager;
+
+@inject User02Context db;
+@* из-за разных httpClient нам нужна фабрика, которая по имени выдаст нужный клиент *@
+@inject IHttpClientFactory httpFactory;
+
+@implements IDisposable
+
+<div class="container">
+
+    <div class="row my-3">
+        <div class="col mb-3">
+            <img src="Logo.svg" width="100" />
+        </div>
+        <div class="col mb-3">
+            @* @bind-value="@search" - привязать ввод к свойству search
+            @bind-value:event="oninput" - обновлять значение при событии ввода, должно срабатывать сразу при вводе буквы*@
+            <input type="text" @bind-value="@search" @bind-value:event="oninput" />
+        </div>
+    </div>
+
+    <div class="row my-3">
+        <div class="overflow-auto">
+            <div class="row flex-nowrap">
+                @foreach (var user in employees)
+                {
+                    <div class="col-sm-2">
+                        <div class="bg-success p-3 mb-3">
+                            <div class="row">
+                                <div class="col"><b>@user.LastName</b></div>
+                                <div class="col"><b>@user.FirstName</b></div>
+                            </div>
+                            <div><b>@user.Patronymic</b></div>
+                            <div>@user.IdRoleNavigation?.Title</div>
+                            <div>@user.CorporateEmail</div>
+                            <div>@user.WorkPhone</div>
+                            <div>@user.BirthdayDate?.ToString("dd MMMM")</div>
+                            <div>
+                                <img src="user.png" width="20" onclick="@(()=>ShowQR(user))" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-sm-4">
+            <div class="container">
+                @* я не стал придумывать события, с ними по идее также все, как с сотрудниками *@
+                @* единственное, у них есть скачивание файла *@
+                @foreach (var user in employees)
+                {
+                    <div class="row mb-3">
+                        <div class="col bg-success p-3">
+                            <div>@user.LastName</div>
+                            <div>@user.FirstName</div>
+                            <div>@user.Patronymic</div>
+                            <div>
+                                <img src="calend.png" width="20" onclick="@(()=>DownloadIcs(user))" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-sm-8">
+            <div class="container">
+                <div class="row">
+                    @foreach (var n in news)
+                    {
+                        <div class="col-sm-6 mb-3">
+                            <div class="bg-success p-3">
+                                <div>
+                                    <img src="@n.Image" height="100" />
+                                </div>
+                                <div>@n.Title</div>
+                                <div>@n.Description</div>
+                                <div>@n.Date.ToShortDateString()</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="z-index: 1000;align-items: center;justify-content: center;display: flex;position:fixed;width:100%;height:100%;top:0;left:0; @qrhide">
+    <div style="width:200px;" onclick="@(()=>CloseQR())">
+        @((MarkupString)qrcode)
+    </div>
+</div>
+
+@code
+{
+    List<Employee> employees = new();
+    List<News> news = new();
+
+    // поле и свойство для поиска
+    string _search = "";
+    string search
+    {
+        get => _search; set
+        {
+            _search = value;
+            RunSearch();
+        }
+    }
+
+
+
+    // я вынес в итоге эту переменную, чтобы rss раз в 15 секунд тоже по ней фильтровались
+    string find;
+
+    async void RunSearch()
+    {
+        find = _search?.ToLower() ?? "";
+        try
+        {
+            // поиск сотрудников
+            // надо это засунуть в api
+            employees = await db.Employees.AsNoTracking().Include(s => s.IdRoleNavigation).Where(s =>
+                s.LastName.ToLower().Contains(find) ||
+                s.FirstName.ToLower().Contains(find) ||
+                (s.Patronymic != null && s.Patronymic.ToLower().Contains(find))).ToListAsync();
+            // и вызвать что-то типа этих двух строк и будет +0.5 балла
+            // var client = httpFactory.CreateClient("apiClient");
+            // employees = await client.GetFromJsonAsync<List<Employee>>($"employers/{find}");
+        }
+        catch
+        {
+
+        }
+
+        try
+        {
+            // поиск по rss, хз откуда брать rss, возьмем отсюда
+            // https://primamedia.ru/export/new/news_main43.rss
+            await RssUpdateAsync();
+        }
+        catch
+        {
+
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+    async Task RssUpdateAsync()
+    {
+        // если смотреть на rss, она будет смотреть на тебя. А вообще она состоит из двух тегов. первый ?xml - версия и тп, мусор короче
+        // второй тег это rss, он включает в себя тег channel. А channel уже включает в себя что-то интересное - инфу о канале, а потом теги item
+        // а теги item включают в себя title, description, pubDate, enclosure (картинка)
+        // получается, нам надо прочесть xml теги в иерархии:
+        // <?xml - пропускаем
+        // <rss - читаем
+        //  <channel - читаем
+        //      <item - читаем
+        //          <title
+        //          <description
+        //          <pubDate
+        //          <enclosure
+        //      <item - читаем
+        //          <title
+        //          <description
+        //          <pubDate
+        //          <enclosure
+
+        var client = httpFactory.CreateClient("rssClient");
+        string result = await client.GetStringAsync("news_main43.rss");
+
+        // десериализация тегов в некоторый документ. Максимально удобный вариант
+        var doc = System.Xml.Linq.XDocument.Parse(result);
+
+        // Descendants - выбор все тегов с указанным именем, нас интересуют только item
+        // каждый тег преобразуем в нужный нам объект, вытаскивая нужные элементы из тега
+        var newsResult = doc.Descendants("item").
+            Select(s => new News
+                {
+                    Title = s.Element("title")?.Value,
+                    Description = s.Element("description")?.Value,
+                    Date = DateTime.Parse(s.Element("pubDate")?.Value), // для даты можно еще вписать  ?? "01.01.01" но фиг знает
+                    Image = s.Element("enclosure")?.Attribute("url")?.Value, // для картинки нам нужен атрибут с адресом, поэтому вытаскиваем его
+                }
+        );
+
+        // фильтрация по поиску
+        if (!string.IsNullOrEmpty(find))
+            news = newsResult.Where(s => s.Title.ToLower().Contains(find) || s.Description.ToLower().Contains(find)).ToList();
+        else
+            news = newsResult.ToList();
+
+        
+    }
+
+    Timer timer;
+    protected override async void OnInitialized()
+    {
+        base.OnInitialized();
+
+        
+        RunSearch();
+        // таймер для обновления раз в 15 секунд
+        timer = new Timer(s =>
+        {
+            RssUpdateAsync();
+            InvokeAsync(StateHasChanged); // без этой строки нифига не обновится, потому что вызов из другого потока
+        }, null, 15000, 15000);
+    }
+
+    // чтобы при закрытии страницы уничтожился таймер, нужен такой метод. сверху для него подключается интерфейс @implements IDisposable
+    public void Dispose()
+    {
+        timer?.Change(-1, 0); // стоп
+        timer?.Dispose(); // удалить
+    }
+
+    // тут должен быть Event
+    void DownloadIcs(Employee ev1)
+    {
+        // manager это NavigationManager, подключен сверху, спровоцирует переход по адресу
+        // остальная обработка в program.cs
+        manager.NavigateTo($"/download/{ev1.Id}", true);
+    }
+
+    // используем эту строку вместе с преобразованием в MarkupString - qr-код будет сразу на странице
+    string qrcode;
+    // qrhide для скрытия блока с qr-кодом
+    string qrhide = "display: none";
+    void ShowQR(Employee user)
+    {
+        // максимально проклято
+        string text = "BEGIN:VCARD" +
+        "VERSION:3.0" +
+        $"N:{user.FirstName}" +
+        $"FN:{user.LastName}" +
+        $"ORG:ГК Дороги России" +
+        $"TITLE:{user.IdRoleNavigation.Title}" +
+        $"TEL;WORK;VOICE:{user.WorkPhone}" +
+        $"TEL;CELL:{user.PersonalPhone}" +
+        $"EMAIL;WORK;INTERNET:{user.CorporateEmail}" +
+        "END:VCARD";
+
+        // эти 2 строки есть readme-файле в нугете - его можно увидеть в папке с нугетом, легко открыть из обозревателя решений
+        var qr = QrCode.EncodeText(text, QrCode.Ecc.Medium);
+        string svg = qr.ToSvgString(4);
+        qrcode = svg;
+        qrhide = ""; // открываем блок с кодом
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    void CloseQR()
+    {
+        qrhide = "display: none";
+    }
+}
