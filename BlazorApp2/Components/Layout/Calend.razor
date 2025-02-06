@@ -5,21 +5,21 @@
 <div class="container">
     <div class="text-center"><b>Календарь событий</b></div>
     <div class="row bg-success ">
-        <div class="col-sm-2" onclick="@(()=>AddMonth(-1))">&lt;</div>
-        <div class="col-sm-8 text-center">@month</div>
-        <div class="col-sm-2" onclick="@(()=>AddMonth(1))">&gt;</div>
+        <div class="col-sm-1" onclick="@(()=>AddMonth(-1))">&lt;</div>
+        <div class="col-sm-10 text-center">@month</div>
+        <div class="col-sm-1" onclick="@(()=>AddMonth(1))">&gt;</div>
     </div>
     <div class="row">
-        <table class="align-items-center">
+        <table>
             <thead>
                 <tr>
-                    <th>п</th>
-                    <th>в</th>
-                    <th>с</th>
-                    <th>ч</th>
-                    <th>п</th>
-                    <th>с</th>
-                    <th>в</th>
+                    <th style="text-align:center;">п</th>
+                    <th style="text-align:center;">в</th>
+                    <th style="text-align:center;">с</th>
+                    <th style="text-align:center;">ч</th>
+                    <th style="text-align:center;">п</th>
+                    <th style="text-align:center;">с</th>
+                    <th style="text-align:center;">в</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,10 +34,10 @@
                                     <td></td>
                                     break;
                                 case 1:
-                                    <td>@(dayIndex - 1)</td>
+                                    <td style="text-align:center;@GetBGFromDay(dayIndex)">@(dayIndex++)</td>
                                     break;
                                 case 2:
-                                    <td Title="@GetCakeTooltipStyle(dayIndex - 1)">
+                                    <td style="text-align:center;@GetBGFromDay(dayIndex)" Title="@GetCakeTooltipStyle(dayIndex++)">
                                         <img src="cake.png" width="20" />
                                     </td>
                                     break;
@@ -63,8 +63,6 @@
     [Parameter]
     public List<Employee> Employees { get; set; }
 
-
-
     protected override async Task OnInitializedAsync()
     {
         currentDate = DateTime.Now;
@@ -74,7 +72,8 @@
 
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        SetDate(selectedDate);
+        if (!firstRender)
+            SetDate(selectedDate);
         return base.OnAfterRenderAsync(firstRender);
     }
 
@@ -117,12 +116,10 @@
                     s.BirthdayDate.Value.Day == dayIndex &&
                     s.BirthdayDate.Value.Month == selectedDate.Month) != null)
                 {
-                    dayIndex++;
                     return 2; 
                 }
                 else
                 {
-                    dayIndex++;
                     return 1;
                 }
             }
@@ -139,5 +136,18 @@
                     Select(s => s.LastName).ToList();
 
         return string.Join(' ', workers);
+    }
+
+    Random random = new();
+    string GetBGFromDay(int day)
+    {
+        // получаем кол-во событий в этот день
+        // возвращаем цвет фона
+        int rnd = random.Next(-5, 6);
+        if (rnd >= 5)
+            return "background:#FC4343;";
+        else if (rnd < 2)
+            return "background:#89FC43;";
+        return "background:#F8FC43;";
     }
 }
