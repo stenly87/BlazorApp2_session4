@@ -23,7 +23,7 @@
                 </tr>
             </thead>
             <tbody>
-                @while (dayIndex < dayCount)
+                @while (dayIndex <= dayCount)
                 {
                     <tr>
                         @for (int i = 1; i <= 7; i++)
@@ -52,6 +52,7 @@
 
 @code {
     string month = "";
+    DateTime selectedDate;
     DateTime currentDate;
     DateTime firstDate;
 
@@ -66,20 +67,21 @@
 
     protected override async Task OnInitializedAsync()
     {
-        SetDate(DateTime.Now);
+        currentDate = DateTime.Now;
+        SetDate(currentDate);
         await base.OnInitializedAsync();
     }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        SetDate(currentDate);
+        SetDate(selectedDate);
         return base.OnAfterRenderAsync(firstRender);
     }
 
 
     void SetDate(DateTime date)
     {
-        currentDate = date;
+        selectedDate = date;
         month = date.ToString("MMMM");
 
         dayCount = DateTime.DaysInMonth(date.Year, date.Month);
@@ -93,7 +95,9 @@
 
     void AddMonth(int count)
     {
-        SetDate(currentDate.AddMonths(count));
+        selectedDate = selectedDate.AddMonths(count);
+        selectedDate = new DateTime(selectedDate.Year, selectedDate.Month, 1);
+        SetDate(selectedDate);
     }
 
     bool print = false;
@@ -111,7 +115,7 @@
                 if (Employees.FirstOrDefault(s => 
                     s.BirthdayDate != null &&
                     s.BirthdayDate.Value.Day == dayIndex &&
-                    s.BirthdayDate.Value.Month == currentDate.Month) != null)
+                    s.BirthdayDate.Value.Month == selectedDate.Month) != null)
                 {
                     dayIndex++;
                     return 2; 
@@ -131,7 +135,7 @@
         var workers = Employees.Where(s =>
                     s.BirthdayDate != null &&
                     s.BirthdayDate.Value.Day == day &&
-                    s.BirthdayDate.Value.Month == currentDate.Month).
+                    s.BirthdayDate.Value.Month == selectedDate.Month).
                     Select(s => s.LastName).ToList();
 
         return string.Join(' ', workers);

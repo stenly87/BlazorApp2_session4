@@ -228,10 +228,9 @@
 
     }
 
-    Timer timer;
-    protected override async void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
+        await base.OnInitializedAsync();
 
         allEmployees = await db.Employees.ToListAsync();
 
@@ -244,6 +243,8 @@
         }, null, 15000, 15000);
     }
 
+    Timer timer;
+ 
     // чтобы при закрытии страницы уничтожился таймер, нужен такой метод. сверху для него подключается интерфейс @implements IDisposable
     public void Dispose()
     {
