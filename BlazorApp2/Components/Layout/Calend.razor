@@ -34,11 +34,17 @@
                                     <td></td>
                                     break;
                                 case 1:
-                                    <td style="text-align:center;@GetBGFromDay(dayIndex)">@(dayIndex++)</td>
+                                    <td style="text-align:center;@GetBGFromDay(dayIndex)">
+                                        <div style="@GetToday(dayIndex)">
+                                            @(dayIndex++)
+                                        </div>
+                                    </td>
                                     break;
                                 case 2:
                                     <td style="text-align:center;@GetBGFromDay(dayIndex)" Title="@GetCakeTooltipStyle(dayIndex++)">
-                                        <img src="cake.png" width="20" />
+                                        <div style="@GetToday(dayIndex)">
+                                            <img src="cake.png" width="20" />
+                                        </div>
                                     </td>
                                     break;
                             }
@@ -111,12 +117,12 @@
         {
             if (dayIndex <= dayCount)
             {
-                if (Employees.FirstOrDefault(s => 
+                if (Employees.FirstOrDefault(s =>
                     s.BirthdayDate != null &&
                     s.BirthdayDate.Value.Day == dayIndex &&
                     s.BirthdayDate.Value.Month == selectedDate.Month) != null)
                 {
-                    return 2; 
+                    return 2;
                 }
                 else
                 {
@@ -144,10 +150,20 @@
         // получаем кол-во событий в этот день
         // возвращаем цвет фона
         int rnd = random.Next(-5, 6);
+
+
         if (rnd >= 5)
             return "background:#FC4343;";
         else if (rnd < 2)
             return "background:#89FC43;";
         return "background:#F8FC43;";
+    }
+
+    string GetToday(int day)
+    {
+        if (new DateTime(selectedDate.Year, selectedDate.Month, day) == currentDate.Date)
+            return "border:2px solid green; border-radius:50%;";
+        
+        return "";
     }
 }
