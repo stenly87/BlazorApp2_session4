@@ -12,7 +12,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient("apiClient", s => s.BaseAddress = new Uri("https://192.168.1.85:5000/") );
 builder.Services.AddHttpClient("rssClient", s => s.BaseAddress = new Uri("https://primamedia.ru/export/new/"));
 
-builder.Services.AddTransient<User02Context>();
+builder.Services.AddDbContext<User02Context>();
 
 var app = builder.Build();
 

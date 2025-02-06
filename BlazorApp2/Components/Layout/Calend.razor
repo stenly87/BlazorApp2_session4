@@ -27,9 +27,22 @@
                 {
                     <tr>
                         @for (int i = 1; i <= 7; i++)
-                            @((MarkupString)PrintDay(i))
-
-
+                        {
+                            @switch (PrintDay(i))
+                            {
+                                case 0:
+                                    <td></td>
+                                    break;
+                                case 1:
+                                    <td>@(dayIndex - 1)</td>
+                                    break;
+                                case 2:
+                                    <td Title="@GetCakeTooltipStyle(dayIndex - 1)">
+                                        <img src="cake.png" width="20" />
+                                    </td>
+                                    break;
+                            }
+                        }
                     </tr>
                 }
             </tbody>
@@ -46,16 +59,23 @@
     int dayIndex = 0;
     int weekDay = 0;
 
-    List<Employee> Employees;
+    [Parameter]
+    public List<Employee> Employees { get; set; }
 
-    List<Employee> monthCake = new();
 
-    protected override void OnInitialized()
+
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
-        Employees = db.Employees.AsNoTracking().ToList();
         SetDate(DateTime.Now);
+        await base.OnInitializedAsync();
     }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        SetDate(currentDate);
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
 
     void SetDate(DateTime date)
     {
@@ -69,10 +89,6 @@
             weekDay = 7;
         dayIndex = 1;
         print = false;
-
-        monthCake = Employees.Where(s =>
-                s.BirthdayDate != null &&
-                s.BirthdayDate.Value.Month == currentDate.Month).ToList();
     }
 
     void AddMonth(int count)
@@ -81,7 +97,7 @@
     }
 
     bool print = false;
-    string PrintDay(int indexWeek)
+    int PrintDay(int indexWeek)
     {
         if (!print)
         {
@@ -92,12 +108,32 @@
         {
             if (dayIndex <= dayCount)
             {
-                if (monthCake.FirstOrDefault(s=>s.BirthdayDate.Value.Day == dayIndex) != null)
-                    return $"<td class=\"bg-success\">{dayIndex++}</td>";
+                if (Employees.FirstOrDefault(s => 
+                    s.BirthdayDate != null &&
+                    s.BirthdayDate.Value.Day == dayIndex &&
+                    s.BirthdayDate.Value.Month == currentDate.Month) != null)
+                {
+                    dayIndex++;
+                    return 2; 
+                }
                 else
-                    return $"<td>{dayIndex++}</td>";
+                {
+                    dayIndex++;
+                    return 1;
+                }
             }
         }
-        return "<td></td>";
+        return 0;
+    }
+
+    string GetCakeTooltipStyle(int day)
+    {
+        var workers = Employees.Where(s =>
+                    s.BirthdayDate != null &&
+                    s.BirthdayDate.Value.Day == day &&
+                    s.BirthdayDate.Value.Month == currentDate.Month).
+                    Select(s => s.LastName).ToList();
+
+        return string.Join(' ', workers);
     }
 }

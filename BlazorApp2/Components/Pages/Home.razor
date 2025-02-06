@@ -58,26 +58,26 @@
 
         <div class="col-sm-4">
             <div>
-                <Calend/>
+                <Calend Employees=@allEmployees/>
             </div>
-                <div >
-                    <b>События</b>
-                </div>
-                @* я не стал придумывать события, с ними по идее также все, как с сотрудниками *@
-                @* единственное, у них есть скачивание файла *@
-                @foreach (var user in employees)
-                {
-                    <div class="row mb-3">
-                        <div class="col bg-success p-3">
-                            <div>@user.LastName</div>
-                            <div>@user.FirstName</div>
-                            <div>@user.Patronymic</div>
-                            <div>
-                                <img src="calend.png" width="20" onclick="@(()=>DownloadIcs(user))" />
-                            </div>
+            <div >
+                <b>События</b>
+            </div>
+            @* я не стал придумывать события, с ними по идее также все, как с сотрудниками *@
+            @* единственное, у них есть скачивание файла *@
+            @foreach (var user in employees)
+            {
+                <div class="row mb-3">
+                    <div class="col bg-success p-3">
+                        <div>@user.LastName</div>
+                        <div>@user.FirstName</div>
+                        <div>@user.Patronymic</div>
+                        <div>
+                            <img src="calend.png" width="20" onclick="@(()=>DownloadIcs(user))" />
                         </div>
                     </div>
-                }
+                </div>
+            }
         </div>
 
         <div class="col-sm-8">
@@ -115,6 +115,7 @@
 
 @code
 {
+    List<Employee> allEmployees = new();
     List<Employee> employees = new();
     List<News> news = new();
 
@@ -224,7 +225,7 @@
         else
             news = newsResult.ToList();
 
-        
+
     }
 
     Timer timer;
@@ -232,7 +233,8 @@
     {
         base.OnInitialized();
 
-        
+        allEmployees = await db.Employees.ToListAsync();
+
         RunSearch();
         // таймер для обновления раз в 15 секунд
         timer = new Timer(s =>
