@@ -1,0 +1,103 @@
+﻿@using BlazorApp2.DB
+@using Microsoft.EntityFrameworkCore
+@inject User02Context db
+
+<div class="container">
+    <div class="text-center"><b>Календарь событий</b></div>
+    <div class="row bg-success ">
+        <div class="col-sm-2" onclick="@(()=>AddMonth(-1))">&lt;</div>
+        <div class="col-sm-8 text-center">@month</div>
+        <div class="col-sm-2" onclick="@(()=>AddMonth(1))">&gt;</div>
+    </div>
+    <div class="row">
+        <table class="align-items-center">
+            <thead>
+                <tr>
+                    <th>п</th>
+                    <th>в</th>
+                    <th>с</th>
+                    <th>ч</th>
+                    <th>п</th>
+                    <th>с</th>
+                    <th>в</th>
+                </tr>
+            </thead>
+            <tbody>
+                @while (dayIndex < dayCount)
+                {
+                    <tr>
+                        @for (int i = 1; i <= 7; i++)
+                            @((MarkupString)PrintDay(i))
+
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    string month = "";
+    DateTime currentDate;
+    DateTime firstDate;
+
+    int dayCount = 0;
+    int dayIndex = 0;
+    int weekDay = 0;
+
+    List<Employee> Employees;
+
+    List<Employee> monthCake = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Employees = db.Employees.AsNoTracking().ToList();
+        SetDate(DateTime.Now);
+    }
+
+    void SetDate(DateTime date)
+    {
+        currentDate = date;
+        month = date.ToString("MMMM");
+
+        dayCount = DateTime.DaysInMonth(date.Year, date.Month);
+        firstDate = new DateTime(date.Year, date.Month, 1);
+        weekDay = (int)firstDate.DayOfWeek;
+        if (weekDay == 0)
+            weekDay = 7;
+        dayIndex = 1;
+        print = false;
+
+        monthCake = Employees.Where(s =>
+                s.BirthdayDate != null &&
+                s.BirthdayDate.Value.Month == currentDate.Month).ToList();
+    }
+
+    void AddMonth(int count)
+    {
+        SetDate(currentDate.AddMonths(count));
+    }
+
+    bool print = false;
+    string PrintDay(int indexWeek)
+    {
+        if (!print)
+        {
+            if (weekDay == indexWeek)
+                print = true;
+        }
+        if (print)
+        {
+            if (dayIndex <= dayCount)
+            {
+                if (monthCake.FirstOrDefault(s=>s.BirthdayDate.Value.Day == dayIndex) != null)
+                    return $"<td class=\"bg-success\">{dayIndex++}</td>";
+                else
+                    return $"<td>{dayIndex++}</td>";
+            }
+        }
+        return "<td></td>";
+    }
+}

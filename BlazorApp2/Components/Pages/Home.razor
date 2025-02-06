@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using BlazorApp2.Components.Layout
 @using BlazorApp2.DB
 @using Microsoft.EntityFrameworkCore
 @using Net.Codecrete.QrCodeGenerator
@@ -13,14 +14,18 @@
 <div class="container">
 
     <div class="row my-3">
-        <div class="col mb-3">
+        <div class="col-sm-2 mb-3">
             <img src="Logo.svg" width="100" />
         </div>
-        <div class="col mb-3">
+        <div class="col-sm-10 mb-3" style="align-content:center;justify-content:center;">
             @* @bind-value="@search" - привязать ввод к свойству search
             @bind-value:event="oninput" - обновлять значение при событии ввода, должно срабатывать сразу при вводе буквы*@
-            <input type="text" @bind-value="@search" @bind-value:event="oninput" />
+            <input type="text" style="width:100%" @bind-value ="@search" @bind-value:event ="oninput" />
         </div>
+    </div>
+
+    <div class="row my-3">
+        <b>Сотрудники</b>
     </div>
 
     <div class="row my-3">
@@ -52,7 +57,12 @@
     <div class="row">
 
         <div class="col-sm-4">
-            <div class="container">
+            <div>
+                <Calend/>
+            </div>
+                <div >
+                    <b>События</b>
+                </div>
                 @* я не стал придумывать события, с ними по идее также все, как с сотрудниками *@
                 @* единственное, у них есть скачивание файла *@
                 @foreach (var user in employees)
@@ -68,12 +78,14 @@
                         </div>
                     </div>
                 }
-            </div>
         </div>
 
         <div class="col-sm-8">
             <div class="container">
                 <div class="row">
+                    <div>
+                        <b>Новости</b>
+                    </div>
                     @foreach (var n in news)
                     {
                         <div class="col-sm-6 mb-3">
