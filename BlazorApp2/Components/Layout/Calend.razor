@@ -2,24 +2,24 @@
 @using Microsoft.EntityFrameworkCore
 @inject User02Context db
 
-<div class="container">
+<div class="container" style="padding:0; width:100%">
     <div class="text-center"><b>Календарь событий</b></div>
-    <div class="row bg-success ">
-        <div class="col-sm-1" onclick="@(()=>AddMonth(-1))">&lt;</div>
-        <div class="col-sm-10 text-center">@month</div>
-        <div class="col-sm-1" onclick="@(()=>AddMonth(1))">&gt;</div>
+    <div class="row bg-success">
+        <div class="col-sm-2" onclick="@(()=>AddMonth(-1))">&lt;</div>
+        <div class="col-sm-8 text-center">@month</div>
+        <div class="col-sm-2" onclick="@(()=>AddMonth(1))">&gt;</div>
     </div>
     <div class="row">
-        <table>
+        <table style="min-width:300px;min-height:300px">
             <thead>
                 <tr>
-                    <th style="text-align:center;">п</th>
-                    <th style="text-align:center;">в</th>
-                    <th style="text-align:center;">с</th>
-                    <th style="text-align:center;">ч</th>
-                    <th style="text-align:center;">п</th>
-                    <th style="text-align:center;">с</th>
-                    <th style="text-align:center;">в</th>
+                    <th width="10" height="10" style="text-align:center;">п</th>
+                    <th width="10" height="10" style="text-align:center;">в</th>
+                    <th width="10" height="10" style="text-align:center;">с</th>
+                    <th width="10" height="10" style="text-align:center;">ч</th>
+                    <th width="10" height="10" style="text-align:center;">п</th>
+                    <th width="10" height="10" style="text-align:center;">с</th>
+                    <th width="10" height="10" style="text-align:center;">в</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,15 +34,15 @@
                                     <td></td>
                                     break;
                                 case 1:
-                                    <td style="text-align:center;@GetBGFromDay(dayIndex)">
-                                        <div style="@GetToday(dayIndex)">
+                                    <td style="@GetBGFromDay(dayIndex)">
+                                        <div style="aspect-ratio:1/1;align-items:center;justify-content:center;display:flex; @GetToday(dayIndex)">
                                             @(dayIndex++)
                                         </div>
                                     </td>
                                     break;
                                 case 2:
-                                    <td style="text-align:center;@GetBGFromDay(dayIndex)" Title="@GetCakeTooltipStyle(dayIndex++)">
-                                        <div style="@GetToday(dayIndex)">
+                                    <td style="@GetBGFromDay(dayIndex)" Title="@GetCakeTooltipStyle(dayIndex)">
+                                        <div style="aspect-ratio:1/1;align-items:center;justify-content:center;display:flex;@GetToday(dayIndex++)">
                                             <img src="cake.png" width="20" />
                                         </div>
                                     </td>
@@ -87,7 +87,7 @@
     void SetDate(DateTime date)
     {
         selectedDate = date;
-        month = date.ToString("MMMM");
+        month = date.ToString("MMMM") + " " + date.Year;
 
         dayCount = DateTime.DaysInMonth(date.Year, date.Month);
         firstDate = new DateTime(date.Year, date.Month, 1);
@@ -160,7 +160,7 @@
             return "";
         else if (rnd < 2)
             return "border-radius:50%;background:#89FC43;";
-        
+
         return "border-radius:50%;background:#F8FC43;";
     }
 
